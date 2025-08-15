@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Monaco Editor Sandbox</title>
+  <style>
+    #container {
+      width: 800px;
+      height: 500px;
+      border: 1px solid #ccc;
+      margin: 20px auto;
+    }
+
+    #output {
+      width: 800px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      min-height: 100px;
+      padding: 10px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+
+    button {
+      display: block;
+      margin: 0 auto 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2 style="text-align:center;">Monaco Editor - JS Sandbox</h2>
+
+  <div id="container"></div>
+  <button id="runCodeBtn">Run Code</button>
+  <pre id="output"></pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs/loader.js"></script>
+  <script>
+    let editor;
+
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs' } });
+
+    require(['vs/editor/editor.main'], function () {
+      editor = monaco.editor.create(document.getElementById('container'), {
+        value: `// Write your JS code here\nconsole.log("Hello from sandbox!");\nreturn 42;`,
+        language: 'javascript',
+      });
+    });
+
+    document.getElementById('runCodeBtn').addEventListener('click', async () => {
+      const code = editor.getValue();
+
+      try {
+        const response = await fetch('http://localhost:3000/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          document.getElementById('output').textContent = 'Error: ' + data.error;
+        } else {
+          document.getElementById('output').textContent =
+            'Result: ' + data.result + '\n\nConsole Logs:\n' + data.logs.join('\n');
+        }
+      } catch (err) {
+        document.getElementById('output').textContent = 'Fetch error: ' + err.message;
+      }
+    });
+  </script>
+
+</body>
+
+</html>
