@@ -7,23 +7,38 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/run', (req, res) => {
-  const userCode = req.body.code; // Get code sent from frontend
+  const userCode = req.body.code; // User writes a function like: function twoSum(nums, target) { ... }
+
+  const testCases = [
+    { input: [7,2], expected: 9 },
+    { input: [0, 10], expected: 10 },
+  ];
 
   const vm = new NodeVM({
-    console: 'redirect',    // Redirect console output so we can capture it
-    sandbox: {},            // Start with empty sandbox
-    timeout: 1000,          // Stop code if it runs longer than 1s
-    require: { external: false } // Disallow require() in sandbox
+    console: 'redirect',
+    timeout: 1000,
+    sandbox: {},
   });
 
   let logs = [];
-  vm.on('console.log', (msg) => logs.push(msg)); // Capture console.log output
+  vm.on('console.log', msg => logs.push(msg));
 
   try {
-    // Wrap user code in a function export so vm2 can run it safely
-    const fn = vm.run(`module.exports = function() { ${userCode} }`);
-    const result = fn(); // Execute the user function
-    res.json({ result, logs });
+    // Export the user's function (user must define a named function, e.g., twoSum)
+    const userFunction = vm.run(`${userCode}; module.exports = twoSum;`);
+
+    // Run test cases
+    const results = testCases.map(tc => {
+      const output = userFunction(...tc.input);
+      return {
+        input: tc.input,
+        expected: tc.expected,
+        output,
+        passed: output === tc.expected
+      };
+    });
+
+    res.json({ results, logs });
   } catch (err) {
     res.json({ error: err.message });
   }
