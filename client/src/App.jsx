@@ -4,9 +4,11 @@ import './App.css';
 const App = () => {
   const containerRef = useRef(null); // HTML container for Monaco
   const editorRef = useRef(null);    // Monaco editor instance
-  const [code, setCode] = useState(`function twoSum(a,b){
+  //stores the initial JavaScript code.
+  const [code, setCode] = useState(`function twoSum(a,b){ 
   //Write your function inside this
 }\n`);
+  //stores the result of running the code
   const [output, setOutput] = useState('');
 
   useEffect(() => {
@@ -32,7 +34,14 @@ const App = () => {
           wordBasedSuggestions: false,
           snippetSuggestions: 'none'
         });
+
+        // Remove the loader div after editor is ready
+        const loader = document.getElementById('editor-loader');
+        if (loader) loader.remove();
+
       });
+
+
 
     };
 
@@ -45,7 +54,6 @@ const App = () => {
   }, []);
 
   const runCode = async () => {
-    if (!editorRef.current) return;
     const code = editorRef.current.getValue();
 
     try {
@@ -110,11 +118,15 @@ const App = () => {
         <div className="bg-[#0A0E17] flex items-start justify-center p-4">
           <div className="w-full max-w-4xl space-y-4">
             {/* Top bar */}
-            <div className="flex justify-between">
+            <div className="flex justify-between" >
+              
               <div>
                 <div className="bg-[#0a0e17] border border-[#1f2937] rounded-md text-white text-sm px-3 py-2">
                   JavaScript
                 </div>
+              </div>
+              <div>
+
               </div>
               <div className="flex items-center space-x-4">
                 <button
@@ -151,7 +163,31 @@ const App = () => {
               id="container_main"
               ref={containerRef}
               style={{ width: '800px', height: '500px', border: '1px solid #ccc', margin: '20px auto' }}
-            />
+            >
+              <div
+                id="editor-loader"
+                style={{
+                  width: '800px', height: '500px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  color: 'white',
+                  scrollbar: {
+                    vertical: 'hidden',   // hide vertical scrollbar
+                    horizontal: 'hidden', // hide horizontal scrollbar
+                  },
+                
+                }}
+              >
+                Loading Editor...
+              </div>
+
+            </div>
+
+
+
+
+
 
             {/* Output box */}
             <div
