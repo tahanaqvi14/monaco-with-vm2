@@ -2,14 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 
 const App = () => {
-  const containerRef = useRef(null); // HTML container for Monaco
-  const editorRef = useRef(null);    // Monaco editor instance
-  //stores the initial JavaScript code.
+  const containerRef = useRef(null);
+  const editorRef = useRef(null);
+
   const [code, setCode] = useState(`function twoSum(a,b){ 
   //Write your function inside this
 }\n`);
-  //stores the result of running the code
+
   const [output, setOutput] = useState('');
+  const [isRunning, setIsRunning] = useState(false); 
+  const [runningAction, setRunningAction] = useState(null); // ✅ "run" or "submit"
 
   useEffect(() => {
     const loaderScript = document.createElement('script');
@@ -35,14 +37,9 @@ const App = () => {
           snippetSuggestions: 'none'
         });
 
-        // Remove the loader div after editor is ready
         const loader = document.getElementById('editor-loader');
         if (loader) loader.remove();
-
       });
-
-
-
     };
 
     document.body.appendChild(loaderScript);
@@ -53,8 +50,10 @@ const App = () => {
     };
   }, []);
 
-  const runCode = async () => {
+  const runCode = async (actionType) => {
     const code = editorRef.current.getValue();
+    setIsRunning(true);
+    setRunningAction(actionType); // ✅ track which button was clicked
 
     try {
       const response = await fetch('http://localhost:3000/run', {
@@ -63,17 +62,15 @@ const App = () => {
         body: JSON.stringify({ code }),
       });
 
-      const data = await response.json();
-
+      const data=await response.json();;
       if (data.error) {
         setOutput('Error: ' + data.error);
       } else if (data.results) {
-        // Format results for display
         let resultText = '';
         data.results.forEach((r, idx) => {
-          resultText += `Test Case ${idx + 1}:\n`;
-          resultText += `Input: [${r.input.join(', ')}]\n`;
-          resultText += `Expected: ${r.expected}, Got: ${r.output}\n`;
+          resultText += `Test Case ${idx + 1}:`;
+          resultText += `Input: [${r.input.join(', ')}]`;
+          resultText += `Expected: ${r.expected}, Got: ${r.output}`;
           resultText += r.passed ? '✅ Passed\n\n' : '❌ Failed\n\n';
         });
         if (data.logs.length > 0) {
@@ -83,6 +80,9 @@ const App = () => {
       }
     } catch (err) {
       setOutput('Fetch error: ' + err.message);
+    } finally {
+      setIsRunning(false);
+      setRunningAction(null); // ✅ reset
     }
   };
 
@@ -118,17 +118,15 @@ const App = () => {
         <div className="bg-[#0A0E17] flex items-start justify-center p-4">
           <div className="w-full max-w-4xl space-y-4">
             {/* Top bar */}
-            <div className="flex justify-between" >
-              
+            <div className="flex justify-between">
               <div>
                 <div className="bg-[#0a0e17] border border-[#1f2937] rounded-md text-white text-sm px-3 py-2">
                   JavaScript
                 </div>
               </div>
-              <div>
-
-              </div>
+              <div></div>
               <div className="flex items-center space-x-4">
+                {/* Reset */}
                 <button
                   type="button"
                   onClick={handleReset}
@@ -138,22 +136,40 @@ const App = () => {
                   <span className="font-semibold">Reset</span>
                 </button>
 
+                {/* Run */}
                 <button
                   type="button"
-                  onClick={runCode}
-                  className="flex items-center space-x-1 bg-[#0ea5e9] rounded-md text-white text-sm px-4 py-2 hover:bg-[#0284c7]"
+                  onClick={() => runCode('run')}
+                  disabled={isRunning}
+                  className={`flex items-center space-x-1 rounded-md text-white text-sm px-4 py-2 ${
+                    isRunning
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-[#0ea5e9] hover:bg-[#0284c7]'
+                  }`}
                 >
                   <i className="fas fa-play"></i>
-                  <span>Run</span>
+                  <span>
+                    {isRunning && runningAction === 'run' ? 'Running...' : 'Run'}
+                  </span>
                 </button>
 
+                {/* Submit */}
                 <button
                   type="button"
-                  onClick={runCode}
-                  className="flex items-center space-x-1 bg-[#14b8a6] rounded-md text-white text-sm px-4 py-2 hover:bg-[#0d9488]"
+                  onClick={() => runCode('submit')}
+                  disabled={isRunning}
+                  className={`flex items-center space-x-1 rounded-md text-white text-sm px-4 py-2 ${
+                    isRunning
+                      ? 'bg-gray-600 cursor-not-allowed'
+                      : 'bg-[#14b8a6] hover:bg-[#0d9488]'
+                  }`}
                 >
                   <i className="fas fa-paper-plane"></i>
-                  <span>Submit</span>
+                  <span>
+                    {isRunning && runningAction === 'submit'
+                      ? 'Submitting...'
+                      : 'Submit'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -162,32 +178,27 @@ const App = () => {
             <div
               id="container_main"
               ref={containerRef}
-              style={{ width: '800px', height: '500px', border: '1px solid #ccc', margin: '20px auto' }}
+              style={{
+                width: '800px',
+                height: '500px',
+                border: '1px solid #ccc',
+                margin: '20px auto'
+              }}
             >
               <div
                 id="editor-loader"
                 style={{
-                  width: '800px', height: '500px',
+                  width: '800px',
+                  height: '500px',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
-                  color: 'white',
-                  scrollbar: {
-                    vertical: 'hidden',   // hide vertical scrollbar
-                    horizontal: 'hidden', // hide horizontal scrollbar
-                  },
-                
+                  color: 'white'
                 }}
               >
                 Loading Editor...
               </div>
-
             </div>
-
-
-
-
-
 
             {/* Output box */}
             <div
