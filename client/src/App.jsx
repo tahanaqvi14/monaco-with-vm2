@@ -5,13 +5,13 @@ const App = () => {
   const containerRef = useRef(null);
   const editorRef = useRef(null);
 
-  const [code, setCode] = useState(`function twoSum(a,b){ 
+  const [code, setCode] = useState(`function { 
   //Write your function inside this
 }\n`);
 
   const [output, setOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false); 
-  const [runningAction, setRunningAction] = useState(null); // ✅ "run" or "submit"
+  const [runningAction, setRunningAction] = useState(null);
 
   useEffect(() => {
     const loaderScript = document.createElement('script');
@@ -19,8 +19,7 @@ const App = () => {
 
     loaderScript.onload = () => {
       window.require.config({
-        paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs' }
-      });
+        paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.43.0/min/vs' }})
 
       window.require(['vs/editor/editor.main'], () => {
         editorRef.current = window.monaco.editor.create(containerRef.current, {
@@ -43,7 +42,6 @@ const App = () => {
     };
 
     document.body.appendChild(loaderScript);
-
     return () => {
       if (editorRef.current) editorRef.current.dispose();
       document.body.removeChild(loaderScript);
